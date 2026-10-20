@@ -21,14 +21,15 @@ export default function Parametres() {
     e.preventDefault()
     setMessage({ type: '', text: 'Création en cours...' })
 
-    const { error } = await supabase.rpc('create_new_user', {
-      user_email: email,
-      user_password: password,
-      user_role: role
+    // Appel à la fonction Edge Supabase (qui utilise la clé service_role côté serveur)
+    const { data, error } = await supabase.functions.invoke('create-user', {
+      body: { email, password, role }
     })
 
     if (error) {
       setMessage({ type: 'error', text: 'Erreur : ' + error.message })
+    } else if (data?.error) {
+      setMessage({ type: 'error', text: 'Erreur : ' + data.error })
     } else {
       setMessage({ type: 'success', text: 'Utilisateur créé avec succès !' })
       setEmail('')
@@ -43,19 +44,15 @@ export default function Parametres() {
     setMessage({ type: '', text: 'Suppression en cours...' })
     
     try {
-      // 1. Audits 5S (la clé primaire est date+zone+auditor, pas d'id)
       const { error: err1 } = await supabase.from('audits').delete().neq('date', '1900-01-01')
       if (err1) throw err1
 
-      // 2. Audits Gemba (la clé primaire est date+ligne+question, pas d'id)
       const { error: err2 } = await supabase.from('gemba_audits').delete().neq('date', '1900-01-01')
       if (err2) throw err2
 
-      // 3. Plans d'action (a un id)
       const { error: err3 } = await supabase.from('action_plans').delete().neq('id', 0)
       if (err3) throw err3
 
-      // 4. Historique (a un id)
       const { error: err4 } = await supabase.from('action_history').delete().neq('id', 0)
       if (err4) throw err4
       
