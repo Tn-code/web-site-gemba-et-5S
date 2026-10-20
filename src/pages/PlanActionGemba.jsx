@@ -26,10 +26,22 @@ export default function PlanActionGemba() {
     const list = []
     audits.forEach(audit => {
       if (String(audit.reponse).toUpperCase() === 'NOK') {
-        const existingAction = actions.find(a => a.type === 'GEMBA' && a.audit_date === audit.date && a.ligne === audit.ligne && a.question === audit.question)
+        const existingAction = actions.find(a => 
+          a.type === 'GEMBA' && 
+          a.audit_date === audit.date && 
+          a.ligne === audit.ligne && 
+          a.question === audit.question
+        )
+        
         list.push({
-          type: 'GEMBA', audit_date: audit.date, ligne: audit.ligne, point_m: audit.point_m, question: audit.question,
-          action_texte: existingAction?.action_texte || audit.action || '', progression: existingAction?.progression || 0,
+          type: 'GEMBA', 
+          audit_date: audit.date, 
+          ligne: audit.ligne, 
+          point_m: audit.point_m, 
+          question: audit.question,
+          // 🌟 C'EST ICI : On récupère l'action du Excel (audit.action)
+          action_texte: existingAction?.action_texte || audit.action || '', 
+          progression: existingAction?.progression || 0,
           pilote_email: existingAction?.pilote_email || ''
         })
       }
@@ -93,7 +105,7 @@ export default function PlanActionGemba() {
                 <th>Ligne</th>
                 <th>Point M</th>
                 <th>Problème (NOK)</th>
-                <th style={{ width: '20%' }}>Action</th>
+                <th style={{ width: '25%' }}>Action Corrective</th>
                 <th style={{ width: '15%' }}>Pilote</th>
                 <th style={{ width: '150px' }}>Progression</th>
               </tr>
@@ -106,7 +118,13 @@ export default function PlanActionGemba() {
                   <td style={{ color: 'var(--text-muted)' }}>{item.point_m}</td>
                   <td style={{ whiteSpace: 'normal', maxWidth: '200px' }}>{item.question}</td>
                   <td>
-                    <input type="text" className="filter-control" style={{ width: '100%' }} defaultValue={item.action_texte} onBlur={(e) => handleUpdate(item, item.progression, e.target.value, item.pilote_email)} />
+                    <input 
+                      type="text" 
+                      className="filter-control" 
+                      style={{ width: '100%' }} 
+                      defaultValue={item.action_texte} 
+                      onBlur={(e) => handleUpdate(item, item.progression, e.target.value, item.pilote_email)} 
+                    />
                   </td>
                   <td>
                     <select className="filter-control" style={{ width: '100%' }} value={item.pilote_email || ''} onChange={(e) => handleUpdate(item, item.progression, item.action_texte, e.target.value)}>

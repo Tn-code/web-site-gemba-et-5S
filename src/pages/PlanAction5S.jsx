@@ -27,11 +27,23 @@ export default function PlanAction5S() {
     audits.forEach(audit => {
       (audit.checkpoints || []).forEach(cp => {
         if (cp.s === 'NOK') {
-          const existingAction = actions.find(a => a.type === '5S' && a.audit_date === audit.date && a.ligne === audit.zone && a.question === cp.q)
+          const existingAction = actions.find(a => 
+            a.type === '5S' && 
+            a.audit_date === audit.date && 
+            a.ligne === audit.zone && 
+            a.question === cp.q
+          )
+          
           list.push({
-            type: '5S', audit_date: audit.date, ligne: audit.zone, point_m: '', question: cp.q,
-            action_texte: existingAction?.action_texte || '', progression: existingAction?.progression || 0,
-            pilote_email: existingAction?.pilote_email || '' // Récupération du pilote
+            type: '5S', 
+            audit_date: audit.date, 
+            ligne: audit.zone, 
+            point_m: '', 
+            question: cp.q,
+            // 🌟 C'EST ICI : On récupère l'action du Excel si elle n'est pas encore enregistrée
+            action_texte: existingAction?.action_texte || cp.a || '', 
+            progression: existingAction?.progression || 0,
+            pilote_email: existingAction?.pilote_email || '' 
           })
         }
       })
@@ -94,9 +106,9 @@ export default function PlanAction5S() {
                 <th>Date</th>
                 <th>Zone</th>
                 <th>Problème (NOK)</th>
-                <th style={{ width: '20%' }}>Action</th>
+                <th style={{ width: '25%' }}>Action Corrective</th>
                 <th style={{ width: '15%' }}>Pilote</th>
-                <th style={{ width: '200px' }}>Progression</th>
+                <th style={{ width: '150px' }}>Progression</th>
               </tr>
             </thead>
             <tbody>
@@ -106,7 +118,13 @@ export default function PlanAction5S() {
                   <td style={{ fontWeight: 'bold' }}>{item.ligne}</td>
                   <td style={{ whiteSpace: 'normal', maxWidth: '250px' }}>{item.question}</td>
                   <td>
-                    <input type="text" className="filter-control" style={{ width: '100%' }} defaultValue={item.action_texte} onBlur={(e) => handleUpdate(item, item.progression, e.target.value, item.pilote_email)} />
+                    <input 
+                      type="text" 
+                      className="filter-control" 
+                      style={{ width: '100%' }} 
+                      defaultValue={item.action_texte} 
+                      onBlur={(e) => handleUpdate(item, item.progression, e.target.value, item.pilote_email)} 
+                    />
                   </td>
                   <td>
                     <select className="filter-control" style={{ width: '100%' }} value={item.pilote_email || ''} onChange={(e) => handleUpdate(item, item.progression, item.action_texte, e.target.value)}>

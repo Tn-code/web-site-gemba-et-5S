@@ -10,7 +10,7 @@ import ResultatsPiliers from './pages/ResultatsPiliers'
 import AnalysePriorites from './pages/AnalysePriorites'
 import RapportPdf from './pages/RapportPdf'
 import PlanAction5S from './pages/PlanAction5S'
-import Login from './pages/Login'
+import Pilotes5S from './pages/Pilotes5S' // Nouveau
 
 import ImportGemba from './pages/ImportGemba'
 import GembaDashboard from './pages/GembaDashboard'
@@ -18,7 +18,9 @@ import GembaPlanifieRealise from './pages/GembaPlanifieRealise'
 import GembaAnalyse from './pages/GembaAnalyse'
 import RapportGemba from './pages/RapportGemba'
 import PlanActionGemba from './pages/PlanActionGemba'
+import PilotesGemba from './pages/PilotesGemba' // Nouveau
 
+import Login from './pages/Login'
 import { supabase } from './supabaseClient'
 import { parseFile } from './services/importExcel'
 import { fetchAudits, upsertAudits } from './services/auditsApi'
@@ -34,7 +36,6 @@ export default function App() {
   const [currentView, setCurrentView] = useState('import')
   const [previewMode, setPreviewMode] = useState(false)
 
-  // 1. Gérer la session
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
@@ -51,16 +52,12 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  // 2. Récupérer le rôle de l'utilisateur
   async function fetchUserRole(userId) {
     const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single()
-    if (!error && data) {
-      setRole(data.role)
-    }
+    if (!error && data) setRole(data.role)
     setLoading(false)
   }
 
-  // 3. Charger les données
   useEffect(() => {
     if (!session) return
     async function load() {
@@ -136,10 +133,12 @@ export default function App() {
         {['uap_gemba', 'lignes_gemba', 'top3_gemba', 'piliers_gemba'].includes(currentView) && <GembaDashboard view={currentView} />}
         {currentView === 'analyse_gemba' && <GembaAnalyse />}
         {currentView === 'plan_action_gemba' && <PlanActionGemba />}
+        {currentView === 'pilotes_gemba' && <PilotesGemba />}
         {currentView === 'rapport_gemba' && <RapportGemba />}
 
         {/* 5S */}
         {currentView === 'plan_action_5s' && <PlanAction5S />}
+        {currentView === 'pilotes_5s' && <Pilotes5S />}
         {currentView === 'rapport' && !previewMode && <RapportPdf audits={audits} />}
         {currentView === 'analyse' && !previewMode && <AnalysePriorites audits={audits} />}
         {currentView === 'piliers' && !previewMode && <ResultatsPiliers audits={audits} />}
