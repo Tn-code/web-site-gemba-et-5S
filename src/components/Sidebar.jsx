@@ -32,6 +32,9 @@ export default function Sidebar({ currentView, setCurrentView }) {
         <button className={`nav-item ${currentView === 'analyse' ? 'active' : ''}`} onClick={() => setCurrentView('analyse')}>
           🎯 Analyse & Priorités
         </button>
+        <button className={`nav-item ${currentView === 'plan_action_5s' ? 'active' : ''}`} onClick={() => setCurrentView('plan_action_5s')}>
+          📋 Plan d'Action 5S
+        </button>
         <button className={`nav-item ${currentView === 'rapport' ? 'active' : ''}`} onClick={() => setCurrentView('rapport')}>
           📄 Rapport d'Audit
         </button>
@@ -56,9 +59,11 @@ export default function Sidebar({ currentView, setCurrentView }) {
         <button className={`nav-item ${currentView === 'piliers_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('piliers_gemba')}>
           🧭 Résultats par M
         </button>
-        
         <button className={`nav-item ${currentView === 'analyse_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('analyse_gemba')}>
           🎯 Analyse & Priorités
+        </button>
+        <button className={`nav-item ${currentView === 'plan_action_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('plan_action_gemba')}>
+          📋 Plan d'Action Gemba
         </button>
         <button className={`nav-item ${currentView === 'rapport_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('rapport_gemba')}>
           📄 Rapport d'Audit Gemba
