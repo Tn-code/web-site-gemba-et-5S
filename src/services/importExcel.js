@@ -1,16 +1,16 @@
 import * as XLSX from 'xlsx'
-import { QUESTIONS, ACTION_HEADERS, META_HEADERS, MAX_POINTS } from '../constants/checklist'
+import { QUESTIONS, ACTION_HEADERS, META_HEADERS } from '../constants/checklist'
 
-/** Normalise un label : remplace NBSP, compresse les espaces, trim. */
-const norm = (s) =>
-  String(s ?? '').replace(/\u00a0/g, ' ').trim().replace(/\s+/g, ' ')
+const norm = (s) => String(s ?? '').replace(/\u00a0/g, ' ').trim().replace(/\s+/g, ' ')
+const cleanText = (s) => {
+  if (!s) return null
+  return String(s).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase()
+}
 
-/** Convertit une valeur Excel (Date, serial number, ISO string) en ISO 8601. */
 function toIso(v) {
   if (v == null || v === '') return null
   if (v instanceof Date) return v.toISOString()
   if (typeof v === 'number') {
-    // 25569 = jours entre 1899-12-30 (epoch Excel) et 1970-01-01
     const ms = Math.round((v - 25569) * 86400 * 1000)
     return new Date(ms).toISOString()
   }
@@ -19,26 +19,14 @@ function toIso(v) {
 }
 const toDate = (v) => { const iso = toIso(v); return iso ? iso.slice(0, 10) : null }
 
-/**
- * Détecte l'index de la ligne d'en-tête (parmi les 10 premières).
- * Une ligne d'en-tête contient à la fois "Date" et "Auditeur".
- */
 function findHeaderRow(aoa) {
   for (let i = 0; i < Math.min(aoa.length, 10); i++) {
     const row = (aoa[i] ?? []).map(norm)
-    if (row.includes(norm(META_HEADERS.date)) && row.includes(norm(META_HEADERS.auditor))) {
-      return i
-    }
+    if (row.includes(norm(META_HEADERS.date)) && row.includes(norm(META_HEADERS.auditor))) return i
   }
   return -1
 }
 
-/**
- * Parse un fichier Excel et retourne un tableau de lignes `audits`
- * prêtes à être upsertées dans Supabase.
- *
- * @throws si les colonnes obligatoires ou une question sont introuvables.
- */
 export async function parseFile(file) {
   const buf = await file.arrayBuffer()
   const wb  = XLSX.read(buf, { type: 'array', cellDates: true })
@@ -61,9 +49,7 @@ export async function parseFile(file) {
   const iTotal   = idx(META_HEADERS.total)
 
   if (iDate < 0 || iAuditor < 0 || iZone < 0 || iTotal < 0) {
-    throw new Error(
-      'Colonnes obligatoires manquantes (Date / Auditeur / Zone / Total points).'
-    )
+    throw new Error('Colonnes obligatoires manquantes (Date / Auditeur / Zone / Total points).')
   }
 
   const checkpointsMeta = QUESTIONS.map((q, qi) => ({
@@ -73,9 +59,7 @@ export async function parseFile(file) {
   }))
   const missing = checkpointsMeta.filter(c => c.iQ < 0)
   if (missing.length) {
-    throw new Error(
-      `${missing.length} question(s) introuvable(s) dans l'en-tête. Ex : "${missing[0].question.slice(0, 60)}…"`
-    )
+    throw new Error(`${missing.length} question(s) introuvable(s) dans l'en-tête. Ex : "${missing[0].question.slice(0, 60)}…"`)
   }
 
   const rows = []
@@ -86,17 +70,33 @@ export async function parseFile(file) {
     if (!row || row.length === 0) continue
 
     const date    = toDate(row[iDate])
-    const auditor = norm(row[iAuditor])
-    const zone    = norm(row[iZone])
-    if (!date && !auditor && !zone) continue   // ligne entièrement vide
-    if (!date || !zone)             continue   // ligne incomplète
+    const auditor = cleanText(row[iAuditor]) || ''
+    const zone    = cleanText(row[iZone])    || ''
+
+    if (!date && !auditor && !zone) continue
+    if (!date || !zone)             continue
 
     const key = `${date}|${zone}|${auditor}`
-    if (seen.has(key)) continue                // doublon dans le fichier
+    if (seen.has(key)) continue
     seen.add(key)
 
-    const pilot = iPilot >= 0 ? norm(row[iPilot]) || null : null
+    const pilot = iPilot >= 0 ? cleanText(row[iPilot]) : null
     const total = Number(row[iTotal]) || 0
+
+    // NOUVEAU : Calcul du max_points en ignorant les N/A
+    let evaluatedCount = 0
+    const checkpoints = checkpointsMeta.map(({ question, iQ, iA }) => {
+      const status = norm(row[iQ]).toUpperCase()
+      if (status === 'OK' || status === 'NOK') evaluatedCount++
+      return {
+        q: question,
+        s: status, 
+        a: iA >= 0 ? norm(row[iA]) || null : null,
+      }
+    })
+
+    // On sauvegarde le bon dénominateur (ex: 25 si 1 N/A)
+    const maxPoints = evaluatedCount > 0 ? evaluatedCount : 26
 
     rows.push({
       date,
@@ -104,12 +104,8 @@ export async function parseFile(file) {
       zone,
       pilot,
       total_points: total,
-      max_points: MAX_POINTS,
-      checkpoints: checkpointsMeta.map(({ question, iQ, iA }) => ({
-        q: question,
-        s: norm(row[iQ]).toUpperCase(),               // OK | NOK | N/A
-        a: iA >= 0 ? norm(row[iA]) || null : null,    // action / feedback
-      })),
+      max_points: maxPoints, // Utilisé pour le calcul du % côté Base de Données
+      checkpoints,
     })
   }
 

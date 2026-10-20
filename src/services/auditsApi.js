@@ -1,6 +1,5 @@
 import { supabase } from '../supabaseClient'
 
-/** Récupère tous les audits, triés par date croissante. */
 export async function fetchAudits() {
   const { data, error } = await supabase
     .from('audits')
@@ -10,10 +9,6 @@ export async function fetchAudits() {
   return data ?? []
 }
 
-/**
- * Upsert par lots de 50 pour rester sous la limite de payload Supabase.
- * @returns {Promise<number>} nombre de lignes traitées
- */
 export async function upsertAudits(rows, chunkSize = 50) {
   let processed = 0
   for (let i = 0; i < rows.length; i += chunkSize) {
@@ -25,4 +20,40 @@ export async function upsertAudits(rows, chunkSize = 50) {
     processed += chunk.length
   }
   return processed
+}
+
+/**
+ * Supprime toutes les lignes et vérifie qu'il n'en reste aucune.
+ * @returns {Promise<number>} nombre de lignes supprimées
+ */
+export async function deleteAllAudits() {
+  // 1) Compter avant
+  const { count: before, error: countErr } = await supabase
+    .from('audits')
+    .select('*', { count: 'exact', head: true })
+  if (countErr) throw new Error(`Comptage impossible : ${countErr.message}`)
+
+  // 2) Supprimer
+  const { data, error } = await supabase
+    .from('audits')
+    .delete()
+    .not('date', 'is', null)
+    .select('date')          // demande à Supabase de renvoyer les lignes supprimées
+  if (error) throw new Error(`Suppression refusée : ${error.message}`)
+
+  const deleted = data?.length ?? 0
+
+  // 3) Vérifier après
+  const { count: after, error: countErr2 } = await supabase
+    .from('audits')
+    .select('*', { count: 'exact', head: true })
+  if (countErr2) throw new Error(`Vérification impossible : ${countErr2.message}`)
+
+  if (after > 0) {
+    throw new Error(
+      `Suppression incomplète : ${before} lignes avant, ${deleted} supprimées, ` +
+      `${after} encore en base. RLS bloque probablement le DELETE.`
+    )
+  }
+  return before ?? deleted
 }
