@@ -14,6 +14,7 @@ import Pilotes5S from './pages/Pilotes5S'
 import MesActions from './pages/MesActions'
 import HistoriqueActions from './pages/HistoriqueActions'
 import Heatmap5S from './pages/Heatmap5S'
+import Parametres from './pages/Parametres' // NOUVEAU
 
 import ImportGemba from './pages/ImportGemba'
 import GembaDashboard from './pages/GembaDashboard'
@@ -112,7 +113,6 @@ export default function App() {
 
   return (
     <div className="app-layout">
-      {/* On passe userEmail à la Sidebar */}
       <Sidebar currentView={currentView} setCurrentView={setCurrentView} role={role} userEmail={session.user.email} />
       
       <main className="main-content">
@@ -123,6 +123,7 @@ export default function App() {
         )}
 
         {currentView === 'mes_actions' && <MesActions userEmail={session.user.email} />}
+        {currentView === 'parametres' && <Parametres />}
         {currentView === 'historique' && <HistoriqueActions />}
 
         {/* GEMBA */}

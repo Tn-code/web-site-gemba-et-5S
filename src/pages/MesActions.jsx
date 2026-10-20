@@ -9,7 +9,6 @@ export default function MesActions({ userEmail }) {
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState('5S')
 
-  // Gestion de l'édition
   const [editMode, setEditMode] = useState({})
   const [drafts, setDrafts] = useState({})
 
@@ -30,15 +29,18 @@ export default function MesActions({ userEmail }) {
   const my5S = myActions.filter(a => a.type === '5S')
   const myGemba = myActions.filter(a => a.type === 'GEMBA')
 
-  // Activer le mode édition
+  const currentList = tab === '5S' ? my5S : myGemba
+
+  const actionsEnRetard = currentList.filter(item => {
+    if (!item.date_prevue || item.progression === 100) return false
+    return new Date(item.date_prevue) < new Date(new Date().toISOString().split('T')[0])
+  })
+
   const enableEdit = (item, key) => {
     setEditMode(prev => ({ ...prev, [key]: true }))
     setDrafts(prev => ({
       ...prev,
-      [key]: {
-        progression: item.progression,
-        date_realisation: item.date_realisation || ''
-      }
+      [key]: { progression: item.progression, date_realisation: item.date_realisation || '' }
     }))
   }
 
@@ -51,22 +53,12 @@ export default function MesActions({ userEmail }) {
     })
   }
 
-  // Enregistrer les modifications manuelles (progression + date)
   const saveEdit = async (item, key) => {
     const draft = drafts[key]
-    
-    // Si on passe à 100% mais qu'aucune date n'est renseignée, on met la date du jour
     let finalDate = draft.date_realisation
-    if (draft.progression === 100 && !finalDate) {
-      finalDate = new Date().toISOString().split('T')[0]
-    }
+    if (draft.progression === 100 && !finalDate) finalDate = new Date().toISOString().split('T')[0]
 
-    const updated = { 
-      ...item, 
-      progression: draft.progression,
-      date_realisation: finalDate
-    }
-    
+    const updated = { ...item, progression: draft.progression, date_realisation: finalDate }
     const savedData = await upsertAction(updated)
     
     if (savedData) {
@@ -77,22 +69,18 @@ export default function MesActions({ userEmail }) {
         new_progression: draft.progression,
         date_realisation: finalDate
       })
-
       setActions(prev => {
         const idx = prev.findIndex(a => a.audit_date === savedData.audit_date && a.ligne === savedData.ligne && a.question === savedData.question)
         if (idx >= 0) { const copy = [...prev]; copy[idx] = savedData; return copy }
         return [...prev, savedData]
       })
     }
-
     cancelEdit(key)
   }
 
-  // Validation rapide (100% + aujourd'hui)
   const handleValidate = async (item) => {
     const today = new Date().toISOString().split('T')[0]
     const updated = { ...item, progression: 100, date_realisation: today }
-    
     const savedData = await upsertAction(updated)
     
     if (savedData) {
@@ -103,7 +91,6 @@ export default function MesActions({ userEmail }) {
         new_progression: 100,
         date_realisation: today
       })
-
       setActions(prev => {
         const idx = prev.findIndex(a => a.audit_date === savedData.audit_date && a.ligne === savedData.ligne && a.question === savedData.question)
         if (idx >= 0) { const copy = [...prev]; copy[idx] = savedData; return copy }
@@ -119,8 +106,6 @@ export default function MesActions({ userEmail }) {
 
   if (loading) return <p className="muted" style={{ padding: '2rem' }}>Chargement…</p>
 
-  const currentList = tab === '5S' ? my5S : myGemba
-
   return (
     <div>
       <div className="flex-between" style={{ marginBottom: '1.5rem' }}>
@@ -134,6 +119,17 @@ export default function MesActions({ userEmail }) {
           </button>
         </div>
       </div>
+
+      {/* BANNIÈRE D'ALERTE RETARD */}
+      {actionsEnRetard.length > 0 && (
+        <div style={{ background: 'rgba(239, 68, 68, 0.1)', borderLeft: '4px solid var(--danger)', padding: '1rem', borderRadius: '4px', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{ fontSize: '1.5rem' }}>🔔</span>
+          <div>
+            <div style={{ fontWeight: 'bold', color: 'var(--danger)' }}>Attention, vous avez {actionsEnRetard.length} action(s) en retard !</div>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Veuillez mettre à jour leur progression dès que possible.</div>
+          </div>
+        </div>
+      )}
 
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="table-wrapper">
@@ -181,11 +177,7 @@ export default function MesActions({ userEmail }) {
                           <span style={{ width: '40px', textAlign: 'right', fontWeight: 'bold' }}>{draft.progression}%</span>
                         </div>
                       ) : (
-                        <span style={{ 
-                          display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '1rem', fontSize: '0.8rem', fontWeight: 'bold',
-                          background: item.progression === 100 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                          color: item.progression === 100 ? 'var(--success)' : 'var(--warning)'
-                        }}>
+                        <span style={{ display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '1rem', fontSize: '0.8rem', fontWeight: 'bold', background: item.progression === 100 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)', color: item.progression === 100 ? 'var(--success)' : 'var(--warning)' }}>
                           {item.progression}%
                         </span>
                       )}
