@@ -1,22 +1,18 @@
 import { useState } from 'react'
+import { supabase } from '../supabaseClient'
 
-export default function Sidebar({ currentView, setCurrentView, role }) {
+export default function Sidebar({ currentView, setCurrentView, role, userEmail }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <img src="/logo.png" alt="WKW Logo" style={{ height: '32px', objectFit: 'contain', marginRight: '0.5rem' }} />
+        <img src="/logo.png" alt="WKW Logo" style={{ height: '32px', objectFit: 'contain' }} />
         <span>WKW Gemba</span>
       </div>
       
+      {/* Le menu défile tout seul si la liste est trop longue */}
       <div className="sidebar-nav">
         
-        <div className="sidebar-section">Mon Espace</div>
-        <button className={`nav-item ${currentView === 'mes_actions' ? 'active' : ''}`} onClick={() => setCurrentView('mes_actions')}>
-          📌 Mes Actions
-        </button>
-
-        {/* SECTION 5S */}
-        <div className="sidebar-section" style={{ marginTop: '1rem' }}>5S</div>
+        <div className="sidebar-section">5S</div>
         
         {role === 'admin' && (
           <>
@@ -35,6 +31,9 @@ export default function Sidebar({ currentView, setCurrentView, role }) {
           </>
         )}
 
+        <button className={`nav-item ${currentView === 'mes_actions' ? 'active' : ''}`} onClick={() => setCurrentView('mes_actions')}>
+          📌 Mes Actions
+        </button>
         <button className={`nav-item ${currentView === 'planifie' ? 'active' : ''}`} onClick={() => setCurrentView('planifie')}>
           📊 Planifié vs Réalisé
         </button>
@@ -60,8 +59,7 @@ export default function Sidebar({ currentView, setCurrentView, role }) {
           📄 Rapport d'Audit
         </button>
 
-        {/* SECTION GEMBA */}
-        <div className="sidebar-section" style={{ marginTop: '1.5rem' }}>Gemba (5M)</div>
+        <div className="sidebar-section">Gemba (5M)</div>
         
         {role === 'admin' && (
           <>
@@ -100,6 +98,16 @@ export default function Sidebar({ currentView, setCurrentView, role }) {
         </button>
         <button className={`nav-item ${currentView === 'rapport_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('rapport_gemba')}>
           📄 Rapport d'Audit Gemba
+        </button>
+      </div>
+
+      {/* Pied de la sidebar : Utilisateur + Déconnexion */}
+      <div className="sidebar-footer">
+        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', wordBreak: 'break-all' }}>
+          Connecté : <strong>{userEmail}</strong><br/>({role})
+        </div>
+        <button className="btn btn-danger" onClick={() => supabase.auth.signOut()} style={{ width: '100%', padding: '0.5rem', fontSize: '0.8rem' }}>
+          Déconnexion
         </button>
       </div>
     </aside>
