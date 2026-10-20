@@ -37,6 +37,34 @@ export default function Parametres() {
     }
   }
 
+  const handleClearAllData = async () => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer TOUTES les données (Audits, Actions, Historique) ? Cette action est irréversible.")) return;
+    
+    setMessage({ type: '', text: 'Suppression en cours...' })
+    
+    try {
+      // 1. Audits 5S (la clé primaire est date+zone+auditor, pas d'id)
+      const { error: err1 } = await supabase.from('audits').delete().neq('date', '1900-01-01')
+      if (err1) throw err1
+
+      // 2. Audits Gemba (la clé primaire est date+ligne+question, pas d'id)
+      const { error: err2 } = await supabase.from('gemba_audits').delete().neq('date', '1900-01-01')
+      if (err2) throw err2
+
+      // 3. Plans d'action (a un id)
+      const { error: err3 } = await supabase.from('action_plans').delete().neq('id', 0)
+      if (err3) throw err3
+
+      // 4. Historique (a un id)
+      const { error: err4 } = await supabase.from('action_history').delete().neq('id', 0)
+      if (err4) throw err4
+      
+      setMessage({ type: 'success', text: 'Toutes les données ont été supprimées avec succès.' })
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Erreur lors de la suppression : ' + error.message })
+    }
+  }
+
   if (loading) return <p className="muted">Chargement…</p>
 
   return (
@@ -52,33 +80,47 @@ export default function Parametres() {
       )}
 
       <div className="grid-2">
-        <div className="card">
-          <h2 className="card-title">Créer un nouvel utilisateur</h2>
-          <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Adresse Email</label>
-              <input type="email" className="filter-control" style={{ width: '100%', marginTop: '0.25rem' }} value={email} onChange={e => setEmail(e.target.value)} required />
-            </div>
-            <div>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Mot de passe temporaire</label>
-              <input type="text" className="filter-control" style={{ width: '100%', marginTop: '0.25rem' }} value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
-            </div>
-            <div>
-              <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Rôle</label>
-              <select className="filter-control" style={{ width: '100%', marginTop: '0.25rem' }} value={role} onChange={e => setRole(e.target.value)}>
-                <option value="user">Pilote / Auditeur (User)</option>
-                <option value="admin">Administrateur (Admin)</option>
-              </select>
-            </div>
-            <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>Créer l'utilisateur</button>
-          </form>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          
+          <div className="card">
+            <h2 className="card-title">Créer un nouvel utilisateur</h2>
+            <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Adresse Email</label>
+                <input type="email" className="filter-control" style={{ width: '100%', marginTop: '0.25rem' }} value={email} onChange={e => setEmail(e.target.value)} required />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Mot de passe temporaire</label>
+                <input type="text" className="filter-control" style={{ width: '100%', marginTop: '0.25rem' }} value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Rôle</label>
+                <select className="filter-control" style={{ width: '100%', marginTop: '0.25rem' }} value={role} onChange={e => setRole(e.target.value)}>
+                  <option value="user">Pilote / Auditeur (User)</option>
+                  <option value="admin">Administrateur (Admin)</option>
+                </select>
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ marginTop: '0.5rem' }}>Créer l'utilisateur</button>
+            </form>
+          </div>
+
+          <div className="card" style={{ borderColor: 'var(--danger)' }}>
+            <h2 className="card-title" style={{ color: 'var(--danger)' }}>Zone dangereuse</h2>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+              Cette action supprimera définitivement tous les audits (5S et Gemba), les plans d'action et l'historique. Les comptes utilisateurs ne seront pas affectés.
+            </p>
+            <button type="button" className="btn btn-danger" style={{ width: '100%' }} onClick={handleClearAllData}>
+              🗑️ Vider toutes les données
+            </button>
+          </div>
+
         </div>
 
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden', height: 'fit-content' }}>
           <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)' }}>
             <h2 className="card-title" style={{ margin: 0 }}>Utilisateurs ({users.length})</h2>
           </div>
-          <div className="table-wrapper" style={{ maxHeight: '400px', border: 'none' }}>
+          <div className="table-wrapper" style={{ maxHeight: '500px', border: 'none' }}>
             <table className="data-table">
               <thead>
                 <tr>
