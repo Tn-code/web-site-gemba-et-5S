@@ -10,7 +10,9 @@ import ResultatsPiliers from './pages/ResultatsPiliers'
 import AnalysePriorites from './pages/AnalysePriorites'
 import RapportPdf from './pages/RapportPdf'
 import PlanAction5S from './pages/PlanAction5S'
-import Pilotes5S from './pages/Pilotes5S' // Nouveau
+import Pilotes5S from './pages/Pilotes5S'
+import MesActions from './pages/MesActions'
+import HistoriqueActions from './pages/HistoriqueActions' // NOUVEAU
 
 import ImportGemba from './pages/ImportGemba'
 import GembaDashboard from './pages/GembaDashboard'
@@ -18,7 +20,7 @@ import GembaPlanifieRealise from './pages/GembaPlanifieRealise'
 import GembaAnalyse from './pages/GembaAnalyse'
 import RapportGemba from './pages/RapportGemba'
 import PlanActionGemba from './pages/PlanActionGemba'
-import PilotesGemba from './pages/PilotesGemba' // Nouveau
+import PilotesGemba from './pages/PilotesGemba'
 
 import Login from './pages/Login'
 import { supabase } from './supabaseClient'
@@ -33,7 +35,7 @@ export default function App() {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   
-  const [currentView, setCurrentView] = useState('import')
+  const [currentView, setCurrentView] = useState('mes_actions')
   const [previewMode, setPreviewMode] = useState(false)
 
   useEffect(() => {
@@ -64,7 +66,6 @@ export default function App() {
       try {
         const data = await fetchAudits()
         setAudits(data)
-        if (data.length === 0) setCurrentView('import')
       } catch (err) {
         setMessage({ type: 'error', text: err.message })
       }
@@ -126,6 +127,9 @@ export default function App() {
             {message.text}
           </div>
         )}
+
+        {currentView === 'mes_actions' && <MesActions userEmail={session.user.email} />}
+        {currentView === 'historique' && <HistoriqueActions />}
 
         {/* GEMBA */}
         {currentView === 'import_gemba' && <ImportGemba />}

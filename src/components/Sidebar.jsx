@@ -9,8 +9,15 @@ export default function Sidebar({ currentView, setCurrentView, role }) {
       
       <div className="sidebar-nav" style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem' }}>
         
+        {/* MES ACTIONS */}
+        <div className="sidebar-section">Mon Espace</div>
+        <button className={`nav-item ${currentView === 'mes_actions' ? 'active' : ''}`} onClick={() => setCurrentView('mes_actions')}>
+          📌 Mes Actions
+        </button>
+
         {/* SECTION 5S */}
-        <div className="sidebar-section">5S</div>
+        <div className="sidebar-section" style={{ marginTop: '1rem' }}>5S</div>
+        
         {role === 'admin' && (
           <>
             <button className={`nav-item ${currentView === 'import' ? 'active' : ''}`} onClick={() => setCurrentView('import')}>
@@ -19,11 +26,15 @@ export default function Sidebar({ currentView, setCurrentView, role }) {
             <button className={`nav-item ${currentView === 'plan_action_5s' ? 'active' : ''}`} onClick={() => setCurrentView('plan_action_5s')}>
               📋 Plan d'Action 5S
             </button>
+            <button className={`nav-item ${currentView === 'pilotes_5s' ? 'active' : ''}`} onClick={() => setCurrentView('pilotes_5s')}>
+              👤 Suivi par Pilote
+            </button>
+            <button className={`nav-item ${currentView === 'historique' ? 'active' : ''}`} onClick={() => setCurrentView('historique')}>
+              📜 Historique des Actions
+            </button>
           </>
         )}
-        <button className={`nav-item ${currentView === 'pilotes_5s' ? 'active' : ''}`} onClick={() => setCurrentView('pilotes_5s')}>
-          👤 Suivi par Pilote
-        </button>
+
         <button className={`nav-item ${currentView === 'planifie' ? 'active' : ''}`} onClick={() => setCurrentView('planifie')}>
           📊 Planifié vs Réalisé
         </button>
@@ -48,6 +59,7 @@ export default function Sidebar({ currentView, setCurrentView, role }) {
 
         {/* SECTION GEMBA */}
         <div className="sidebar-section" style={{ marginTop: '1.5rem' }}>Gemba (5M)</div>
+        
         {role === 'admin' && (
           <>
             <button className={`nav-item ${currentView === 'import_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('import_gemba')}>
@@ -56,11 +68,12 @@ export default function Sidebar({ currentView, setCurrentView, role }) {
             <button className={`nav-item ${currentView === 'plan_action_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('plan_action_gemba')}>
               📋 Plan d'Action Gemba
             </button>
+            <button className={`nav-item ${currentView === 'pilotes_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('pilotes_gemba')}>
+              👤 Suivi par Pilote
+            </button>
           </>
         )}
-        <button className={`nav-item ${currentView === 'pilotes_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('pilotes_gemba')}>
-          👤 Suivi par Pilote
-        </button>
+
         <button className={`nav-item ${currentView === 'planifie_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('planifie_gemba')}>
           📊 Planifié vs Réalisé
         </button>
