@@ -1,19 +1,23 @@
 import { useState, useEffect, useMemo } from 'react'
 import { supabase } from '../supabaseClient'
 import { fetchActions, upsertAction } from '../services/actionsApi'
+import { fetchUsers } from '../services/usersApi'
 
 export default function PlanAction5S() {
   const [audits, setAudits] = useState([])
   const [actions, setActions] = useState([])
+  const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       supabase.from('audits').select('*').order('date', { ascending: false }),
-      fetchActions()
-    ]).then(([auditsRes, actionsRes]) => {
+      fetchActions(),
+      fetchUsers()
+    ]).then(([auditsRes, actionsRes, usersRes]) => {
       if (!auditsRes.error) setAudits(auditsRes.data || [])
       setActions(actionsRes)
+      setUsers(usersRes)
       setLoading(false)
     })
   }, [])
@@ -26,7 +30,8 @@ export default function PlanAction5S() {
           const existingAction = actions.find(a => a.type === '5S' && a.audit_date === audit.date && a.ligne === audit.zone && a.question === cp.q)
           list.push({
             type: '5S', audit_date: audit.date, ligne: audit.zone, point_m: '', question: cp.q,
-            action_texte: existingAction?.action_texte || '', progression: existingAction?.progression || 0
+            action_texte: existingAction?.action_texte || '', progression: existingAction?.progression || 0,
+            pilote_email: existingAction?.pilote_email || '' // Récupération du pilote
           })
         }
       })
@@ -34,14 +39,18 @@ export default function PlanAction5S() {
     return list
   }, [audits, actions])
 
-  // Calcul des KPI
   const totalActions = nokQuestions.length
   const actionsRealisees = nokQuestions.filter(a => a.progression === 100).length
   const actionsNonRealisees = totalActions - actionsRealisees
   const tauxRealisation = totalActions > 0 ? Math.round((actionsRealisees / totalActions) * 100) : 0
 
-  const handleUpdate = async (item, newProgression, newTexte) => {
-    const updated = { ...item, progression: newProgression, action_texte: newTexte }
+  const handleUpdate = async (item, newProgression, newTexte, newPilote) => {
+    const updated = { 
+      ...item, 
+      progression: newProgression, 
+      action_texte: newTexte,
+      pilote_email: newPilote 
+    }
     await upsertAction(updated)
     setActions(prev => {
       const idx = prev.findIndex(a => a.audit_date === updated.audit_date && a.ligne === updated.ligne && a.question === updated.question)
@@ -58,11 +67,10 @@ export default function PlanAction5S() {
         <h1 style={{ fontSize: '1.5rem', margin: 0 }}>Plan d'Action 5S</h1>
       </div>
 
-      {/* KPI Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
         <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
           <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Total des actions</div>
-          <div style={{ fontSize: '2.5rem', fontWeight: 800, color: 'var(--text-main)' }}>{totalActions}</div>
+          <div style={{ fontSize: '2.5rem', fontWeight: 800 }}>{totalActions}</div>
         </div>
         <div className="card" style={{ textAlign: 'center', padding: '1.5rem' }}>
           <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Actions réalisées</div>
@@ -86,7 +94,8 @@ export default function PlanAction5S() {
                 <th>Date</th>
                 <th>Zone</th>
                 <th>Problème (NOK)</th>
-                <th>Action</th>
+                <th style={{ width: '20%' }}>Action</th>
+                <th style={{ width: '15%' }}>Pilote</th>
                 <th style={{ width: '200px' }}>Progression</th>
               </tr>
             </thead>
@@ -95,13 +104,21 @@ export default function PlanAction5S() {
                 <tr key={i}>
                   <td>{new Date(item.audit_date).toLocaleDateString('fr-FR')}</td>
                   <td style={{ fontWeight: 'bold' }}>{item.ligne}</td>
-                  <td style={{ whiteSpace: 'normal', maxWidth: '300px' }}>{item.question}</td>
+                  <td style={{ whiteSpace: 'normal', maxWidth: '250px' }}>{item.question}</td>
                   <td>
-                    <input type="text" className="filter-control" style={{ width: '100%' }} defaultValue={item.action_texte} onBlur={(e) => handleUpdate(item, item.progression, e.target.value)} />
+                    <input type="text" className="filter-control" style={{ width: '100%' }} defaultValue={item.action_texte} onBlur={(e) => handleUpdate(item, item.progression, e.target.value, item.pilote_email)} />
+                  </td>
+                  <td>
+                    <select className="filter-control" style={{ width: '100%' }} value={item.pilote_email || ''} onChange={(e) => handleUpdate(item, item.progression, item.action_texte, e.target.value)}>
+                      <option value="">-- Choisir --</option>
+                      {users.map(u => (
+                        <option key={u.email} value={u.email}>{u.email}</option>
+                      ))}
+                    </select>
                   </td>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <input type="range" min="0" max="100" step="25" value={item.progression} onChange={(e) => handleUpdate(item, Number(e.target.value), item.action_texte)} style={{ flex: 1 }} />
+                      <input type="range" min="0" max="100" step="25" value={item.progression} onChange={(e) => handleUpdate(item, Number(e.target.value), item.action_texte, item.pilote_email)} style={{ flex: 1 }} />
                       <span style={{ width: '40px', textAlign: 'right', fontWeight: 'bold', color: item.progression === 100 ? 'var(--success)' : 'var(--text-main)' }}>{item.progression}%</span>
                     </div>
                   </td>
