@@ -18,53 +18,72 @@ export default function Login() {
     })
 
     if (error) {
-      setError('Email ou mot de passe incorrect.')
+      setError('Identifiants incorrects. Veuillez réessayer.')
     }
     setLoading(false)
   }
 
   return (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: 'var(--bg-main)' }}>
-      <div className="card" style={{ width: '100%', maxWidth: '400px', padding: '2.5rem' }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <img src="/logo.png" alt="WKW" style={{ width: '80px', marginBottom: '1rem' }} />
-          <h2 style={{ margin: 0 }}>Connexion Sécurisée</h2>
-          <p className="muted" style={{ fontSize: '0.9rem' }}>Accès réservé aux auditeurs et managers.</p>
+    <div className="pro-login-page">
+      
+      {/* Image de fond corporate (floutée) */}
+      <div className="pro-bg-image"></div>
+      
+      <div className="pro-login-container">
+        
+        {/* En-tête */}
+        <div className="pro-login-header">
+          <div className="pro-logo-box">
+            <img src="/logo.png" alt="WKW Logo" />
+          </div>
+          <h1 className="pro-title">WKW Gemba</h1>
+          <p className="pro-subtitle">Connectez-vous à votre espace de travail</p>
         </div>
 
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Adresse Email</label>
+        {/* Formulaire */}
+        <form onSubmit={handleLogin} className="pro-form">
+          <div className="pro-input-group">
+            <label>Adresse Email</label>
             <input 
               type="email" 
-              placeholder="exemple@wkw.com" 
-              className="filter-control" 
-              style={{ width: '100%', marginTop: '0.25rem' }}
+              placeholder="nom@wkw-group.com" 
               value={email}
               onChange={(e) => { setEmail(e.target.value); setError('') }}
               required
             />
           </div>
 
-          <div>
-            <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Mot de passe</label>
+          <div className="pro-input-group">
+            <label>Mot de passe</label>
             <input 
               type="password" 
               placeholder="••••••••" 
-              className="filter-control" 
-              style={{ width: '100%', marginTop: '0.25rem' }}
               value={password}
               onChange={(e) => { setPassword(e.target.value); setError('') }}
               required
             />
           </div>
 
-          {error && <p style={{ color: 'var(--danger)', fontSize: '0.85rem', margin: 0, textAlign: 'center' }}>{error}</p>}
+          <div className="pro-forgot-password">
+            <a href="#reset">Mot de passe oublié ?</a>
+          </div>
+
+          {error && (
+            <div className="pro-error">
+              {error}
+            </div>
+          )}
           
-          <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem', marginTop: '1rem' }} disabled={loading}>
+          <button type="submit" className="pro-btn" disabled={loading}>
             {loading ? 'Connexion...' : 'Se connecter'}
           </button>
         </form>
+
+        {/* Pied de page */}
+        <div className="pro-footer">
+          <p>© 2026 WKW Group. Tous droits réservés.</p>
+          <p>Besoin d'aide ? Contactez votre administrateur.</p>
+        </div>
       </div>
     </div>
   )
