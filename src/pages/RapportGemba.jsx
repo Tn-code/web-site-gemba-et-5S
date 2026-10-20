@@ -16,7 +16,6 @@ export default function RapportGemba() {
     })
   }, [])
 
-  // Regroupement des audits
   const auditsGrouped = useMemo(() => {
     const groups = {}
     data.forEach(row => {
@@ -34,22 +33,28 @@ export default function RapportGemba() {
 
   const selectedAudit = auditsGrouped.find(a => a.id === selectedAuditId)
 
-  // Gestion de l'ajout de photos
   const handlePhotoUpload = (index, e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      setQuestionPhotos(prev => ({ ...prev, [index]: event.target.result }))
-    }
-    reader.readAsDataURL(file)
+    const files = Array.from(e.target.files)
+    if (files.length === 0) return
+
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setQuestionPhotos(prev => ({
+          ...prev,
+          [index]: [...(prev[index] || []), event.target.result]
+        }))
+      }
+      reader.readAsDataURL(file)
+    })
     e.target.value = ''
   }
 
-  const removePhoto = (index) => {
+  const removePhoto = (index, photoIndex) => {
     setQuestionPhotos(prev => {
       const copy = { ...prev }
-      delete copy[index]
+      copy[index] = copy[index].filter((_, i) => i !== photoIndex)
+      if (copy[index].length === 0) delete copy[index]
       return copy
     })
   }
@@ -59,7 +64,6 @@ export default function RapportGemba() {
 
     const doc = new jsPDF()
     
-    // --- CALCUL DES SCORES PAR PILIER (M) ---
     const mScores = {}
     selectedAudit.rows.forEach(r => {
       const m = r.point_m
@@ -74,12 +78,10 @@ export default function RapportGemba() {
       return [m, `${s.ok} OK`, `${s.nok} NOK`, `${score} %`]
     })
 
-    // Score Global de l'audit
     const globalOk = selectedAudit.rows.filter(r => r.reponse === 'OK').length
     const globalTotal = selectedAudit.rows.filter(r => r.reponse === 'OK' || r.reponse === 'NOK').length
     const globalScore = globalTotal > 0 ? Math.round((globalOk / globalTotal) * 100) : 0
 
-    // En-tête
     const imgLogo = new Image()
     imgLogo.src = '/logo.png'
     try { doc.addImage(imgLogo, 'PNG', 14, 10, 20, 20) } catch (e) {}
@@ -87,12 +89,10 @@ export default function RapportGemba() {
     doc.setFontSize(22)
     doc.setTextColor(15, 23, 42)
     doc.text("Rapport d'Audit Gemba", 40, 20)
-
     doc.setFontSize(11)
     doc.setTextColor(100, 116, 139)
     doc.text(`Document généré le ${new Date().toLocaleDateString('fr-FR')}`, 40, 28)
 
-    // Infos générales
     autoTable(doc, {
       startY: 40,
       head: [['Informations sur l\'audit', 'Détails']],
@@ -100,46 +100,44 @@ export default function RapportGemba() {
         ['Date de l\'audit', new Date(selectedAudit.date).toLocaleDateString('fr-FR')],
         ['Ligne / Zone auditée', selectedAudit.ligne || '—'],
         ['UAP', selectedAudit.uap || '—'],
-        ['Score Global de l\'audit', `${globalScore} % (${globalOk} OK / ${globalTotal} évalués)`],
+        ['Score Global', `${globalScore} %`],
       ],
       theme: 'grid',
-      headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold' },
+      headStyles: { fillColor: [15, 23, 42], textColor: 255 },
       styles: { fontSize: 10, cellPadding: 3 },
     })
 
-    // Analyse par pilier (M)
     autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 8,
-      head: [['Pilier M (Axe)', 'Points OK', 'Points NOK', 'Score de l\'axe']],
+      head: [['Pilier M (Axe)', 'OK', 'NOK', 'Score']],
       body: mStats,
       theme: 'striped',
-      headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+      headStyles: { fillColor: [59, 130, 246], textColor: 255 },
       styles: { fontSize: 10, cellPadding: 3 },
     })
 
-    // Détail des questions
     doc.setFontSize(14)
     doc.setTextColor(15, 23, 42)
     doc.text("Détail de l'audit", 14, doc.lastAutoTable.finalY + 12)
 
     const tableData = selectedAudit.rows.map((r, i) => {
-      const hasPhoto = questionPhotos[i] ? true : false
+      const photosCount = questionPhotos[i]?.length || 0
       return [
         r.point_m,
         r.question,
         r.reponse,
         r.action !== '-' ? r.action : '',
         r.pilote !== '-' ? r.pilote : '',
-        hasPhoto ? ' ' : '—'
+        photosCount > 0 ? `${photosCount} photo(s)` : '—'
       ]
     })
 
     autoTable(doc, {
       startY: doc.lastAutoTable.finalY + 16,
-      head: [['Point M', 'Question', 'Statut', 'Action Corrective', 'Pilote', 'Photo']],
+      head: [['Point M', 'Question', 'Statut', 'Action', 'Pilote', 'Photos']],
       body: tableData,
       theme: 'grid',
-      headStyles: { fillColor: [15, 23, 42], textColor: 255, fontStyle: 'bold' },
+      headStyles: { fillColor: [15, 23, 42], textColor: 255 },
       styles: { fontSize: 8, cellPadding: 2, valign: 'middle' },
       columnStyles: {
         0: { cellWidth: 25 },
@@ -147,33 +145,57 @@ export default function RapportGemba() {
         2: { cellWidth: 15, fontStyle: 'bold', halign: 'center' },
         3: { cellWidth: 45 },
         4: { cellWidth: 25 },
-        5: { cellWidth: 25, halign: 'center' }
+        5: { cellWidth: 20, halign: 'center' }
       },
       didParseCell: function (data) {
         if (data.section === 'body' && data.column.index === 2) {
           if (data.cell.raw === 'OK') data.cell.styles.textColor = [16, 185, 129]
           if (data.cell.raw === 'NOK') data.cell.styles.textColor = [239, 68, 68]
         }
-      },
-      didDrawCell: function (data) {
-        if (data.section === 'body' && data.column.index === 5) {
-          const rowIndex = data.row.index
-          if (questionPhotos[rowIndex]) {
-            const imgWidth = data.cell.width - 4
-            const imgHeight = data.cell.height - 4
-            doc.addImage(questionPhotos[rowIndex], 'JPEG', data.cell.x + 2, data.cell.y + 2, imgWidth, imgHeight)
-          }
-        }
       }
     })
 
-    // Pied de page
+    // --- AJOUT DES PAGES PHOTOS ---
+    const photosToRender = []
+    Object.entries(questionPhotos).forEach(([index, photos]) => {
+      const row = selectedAudit.rows[parseInt(index)]
+      photos.forEach(base64 => photosToRender.push({ question: row ? row.question : `Question ${index}`, base64 }))
+    })
+
+    if (photosToRender.length > 0) {
+      doc.addPage()
+      doc.setFontSize(18)
+      doc.setTextColor(15, 23, 42)
+      doc.text("Photos de l'audit", 14, 20)
+
+      let yPos = 30
+      
+      photosToRender.forEach((item, i) => {
+        if (yPos > 250) {
+          doc.addPage()
+          yPos = 20
+        }
+
+        doc.setFontSize(10)
+        doc.setTextColor(100, 116, 139)
+        // Coupe le texte si trop long
+        const shortQ = item.question.length > 80 ? item.question.substring(0, 80) + '...' : item.question
+        doc.text(`Problème : ${shortQ}`, 14, yPos)
+        
+        const imgWidth = 80
+        const imgHeight = 60
+        doc.addImage(item.base64, 'JPEG', 14, yPos + 5, imgWidth, imgHeight)
+        
+        yPos += 75
+      })
+    }
+
     const pageCount = doc.internal.getNumberOfPages()
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i)
       doc.setFontSize(9)
       doc.setTextColor(150)
-      doc.text(`WKW Tunisie - Rapport confidentiel - Page ${i} / ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' })
+      doc.text(`WKW Tunisie - Page ${i} / ${pageCount}`, doc.internal.pageSize.width / 2, doc.internal.pageSize.height - 10, { align: 'center' })
     }
 
     doc.save(`Gemba_${selectedAudit.ligne}_${selectedAudit.date}.pdf`)
@@ -221,12 +243,13 @@ export default function RapportGemba() {
                   <th>Question</th>
                   <th>Statut</th>
                   <th>Action / Commentaire</th>
-                  <th>Photo</th>
+                  <th style={{ width: '250px' }}>Photos</th>
                 </tr>
               </thead>
               <tbody>
                 {selectedAudit.rows.map((r, i) => {
                   const isNok = String(r.reponse).toUpperCase() === 'NOK'
+                  const photos = questionPhotos[i] || []
                   return (
                     <tr key={i} style={{ background: isNok ? 'rgba(239, 68, 68, 0.05)' : 'transparent' }}>
                       <td style={{ color: 'var(--text-muted)' }}>{r.point_m}</td>
@@ -239,18 +262,19 @@ export default function RapportGemba() {
                       <td style={{ whiteSpace: 'normal', maxWidth: '250px', color: 'var(--warning)' }}>{r.action}</td>
                       <td>
                         {isNok && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            {questionPhotos[i] ? (
-                              <div style={{ position: 'relative' }}>
-                                <img src={questionPhotos[i]} alt="Preuve" style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />
-                                <button onClick={() => removePhoto(i)} style={{ position: 'absolute', top: -5, right: -5, background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '50%', width: '16px', height: '16px', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
-                              </div>
-                            ) : (
-                              <label className="btn btn-secondary" style={{ cursor: 'pointer', padding: '0.2rem 0.5rem', fontSize: '0.75rem' }}>
-                                📷 Ajouter
-                                <input type="file" accept="image/*" onChange={(e) => handlePhotoUpload(i, e)} style={{ display: 'none' }} />
-                              </label>
-                            )}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                              {photos.map((photo, pIdx) => (
+                                <div key={pIdx} style={{ position: 'relative' }}>
+                                  <img src={photo} alt={`Preuve ${pIdx + 1}`} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
+                                  <button onClick={() => removePhoto(i, pIdx)} style={{ position: 'absolute', top: -5, right: -5, background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '50%', width: '16px', height: '16px', cursor: 'pointer', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+                                </div>
+                              ))}
+                            </div>
+                            <label className="btn btn-secondary" style={{ cursor: 'pointer', padding: '0.2rem 0.5rem', fontSize: '0.75rem', alignSelf: 'flex-start' }}>
+                              📷 Ajouter des photos
+                              <input type="file" accept="image/*" multiple onChange={(e) => handlePhotoUpload(i, e)} style={{ display: 'none' }} />
+                            </label>
                           </div>
                         )}
                       </td>
