@@ -11,9 +11,10 @@ import AnalysePriorites from './pages/AnalysePriorites'
 import RapportPdf from './pages/RapportPdf'
 
 import ImportGemba from './pages/ImportGemba'
-import GembaAudits from './pages/GembaAudits'
 import GembaDashboard from './pages/GembaDashboard'
 import GembaPlanifieRealise from './pages/GembaPlanifieRealise'
+import GembaAnalyse from './pages/GembaAnalyse'
+import RapportGemba from './pages/RapportGemba'
 
 import { parseFile } from './services/importExcel'
 import { fetchAudits, upsertAudits } from './services/auditsApi'
@@ -43,8 +44,6 @@ export default function App() {
     }
   }
 
-  // ... (les fonctions d'import 5S restent inchangées) ...
-
   if (loading) return <div className="container muted" style={{ marginLeft: 260 }}>Chargement…</div>
 
   return (
@@ -60,12 +59,14 @@ export default function App() {
 
         {/* SECTION GEMBA */}
         {currentView === 'import_gemba' && <ImportGemba />}
-        {currentView === 'audits_gemba' && <GembaAudits />}
         {currentView === 'planifie_gemba' && <GembaPlanifieRealise />}
         
         {['uap_gemba', 'lignes_gemba', 'top3_gemba', 'piliers_gemba'].includes(currentView) && (
           <GembaDashboard view={currentView} />
         )}
+        
+        {currentView === 'analyse_gemba' && <GembaAnalyse />}
+        {currentView === 'rapport_gemba' && <RapportGemba />}
 
         {/* SECTION 5S (Le reste reste inchangé) */}
         {currentView === 'rapport' && !previewMode && <RapportPdf audits={audits} />}
