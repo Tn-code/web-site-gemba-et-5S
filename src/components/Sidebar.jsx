@@ -48,10 +48,13 @@ export default function Sidebar({ currentView, setCurrentView, onDataCleared, ha
         <button className={`nav-item ${currentView === 'piliers' ? 'active' : ''}`} onClick={() => setCurrentView('piliers')}>
           🧭 Résultats par Axe (5S)
         </button>
-        
-        {/* NOUVEAU BOUTON */}
         <button className={`nav-item ${currentView === 'analyse' ? 'active' : ''}`} onClick={() => setCurrentView('analyse')}>
           🎯 Analyse & Priorités
+        </button>
+        
+        {/* NOUVEAU BOUTON RAPPORT PDF */}
+        <button className={`nav-item ${currentView === 'rapport' ? 'active' : ''}`} onClick={() => setCurrentView('rapport')}>
+          📄 Rapport d'Audit PDF
         </button>
       </div>
 

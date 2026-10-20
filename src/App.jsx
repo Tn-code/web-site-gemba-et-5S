@@ -8,6 +8,7 @@ import TendanceLigne from './pages/TendanceLigne'
 import Top3Lignes from './pages/Top3Lignes'
 import ResultatsPiliers from './pages/ResultatsPiliers'
 import AnalysePriorites from './pages/AnalysePriorites'
+import RapportPdf from './pages/RapportPdf'
 import { parseFile } from './services/importExcel'
 import { fetchAudits, upsertAudits } from './services/auditsApi'
 
@@ -93,6 +94,7 @@ export default function App() {
           </div>
         )}
 
+        {currentView === 'rapport' && !previewMode && <RapportPdf audits={audits} />}
         {currentView === 'analyse' && !previewMode && <AnalysePriorites audits={audits} />}
         {currentView === 'piliers' && !previewMode && <ResultatsPiliers audits={audits} />}
         {currentView === 'top3' && !previewMode && <Top3Lignes audits={audits} />}
