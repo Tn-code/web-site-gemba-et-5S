@@ -162,7 +162,7 @@ export default function App() {
                     <tbody>
                       {audits.map((a, i) => {
                         const pct = a.total_points && a.max_points ? ((a.total_points / a.max_points) * 100).toFixed(1) : '0.0'
-                        const scoreClass = pct >= 80 ? 'ok' : pct >= 60 ? 'warn' : 'bad'
+                        const scoreClass = Number(pct) >= 87 ? 'ok' : Number(pct) >= 85 ? 'warn' : 'bad'
                         const nokActions = (a.checkpoints || []).filter(c => c.a)
                         
                         return (

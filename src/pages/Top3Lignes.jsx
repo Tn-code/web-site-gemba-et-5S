@@ -49,7 +49,7 @@ export default function Top3Lignes({ audits }) {
   }, [audits, selectedMonth])
 
   const RankingList = ({ title, data, isTop }) => {
-    const color = isTop ? 'var(--success)' : 'var(--danger)'
+    const color = isTop ? '#10b981' : '#ef4444'
     const icon = isTop ? '🏆' : '⚠️'
     
     const displayData = data.slice(0, 3)

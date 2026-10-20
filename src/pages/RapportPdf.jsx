@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { getScoreColor } from '../utils/colors'
 
 const PILLARS_CONFIG = [
   { name: '1. Seiri (Trier)', range: [0, 3] },

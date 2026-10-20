@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react'
 import { ResponsiveContainer, BarChart, Bar, Cell, XAxis, YAxis, Tooltip, CartesianGrid, LabelList } from 'recharts'
 import { getMonthKey, getWeekKey, formatMonthLabel, formatWeekLabel } from '../utils/dateHelpers'
 
-const getColor = (score) => score >= 80 ? '#10b981' : score >= 60 ? '#f59e0b' : '#ef4444'
+import { getScoreColor } from '../utils/colors'
+const getColor = getScoreColor
 const axisStyle = { fontSize: 12, fill: '#94a3b8' }
 
 export default function ResultatsLigne({ audits }) {
