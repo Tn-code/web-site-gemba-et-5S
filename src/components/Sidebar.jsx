@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function Sidebar({ currentView, setCurrentView }) {
+export default function Sidebar({ currentView, setCurrentView, role }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -11,9 +11,19 @@ export default function Sidebar({ currentView, setCurrentView }) {
         
         {/* SECTION 5S */}
         <div className="sidebar-section">5S</div>
-        <button className={`nav-item ${currentView === 'import' ? 'active' : ''}`} onClick={() => setCurrentView('import')}>
-          📥 Importation 5S
-        </button>
+        
+        {/* Boutons visibles uniquement par l'Admin */}
+        {role === 'admin' && (
+          <>
+            <button className={`nav-item ${currentView === 'import' ? 'active' : ''}`} onClick={() => setCurrentView('import')}>
+              📥 Importation 5S
+            </button>
+            <button className={`nav-item ${currentView === 'plan_action_5s' ? 'active' : ''}`} onClick={() => setCurrentView('plan_action_5s')}>
+              📋 Plan d'Action 5S
+            </button>
+          </>
+        )}
+
         <button className={`nav-item ${currentView === 'planifie' ? 'active' : ''}`} onClick={() => setCurrentView('planifie')}>
           📊 Planifié vs Réalisé
         </button>
@@ -32,18 +42,24 @@ export default function Sidebar({ currentView, setCurrentView }) {
         <button className={`nav-item ${currentView === 'analyse' ? 'active' : ''}`} onClick={() => setCurrentView('analyse')}>
           🎯 Analyse & Priorités
         </button>
-        <button className={`nav-item ${currentView === 'plan_action_5s' ? 'active' : ''}`} onClick={() => setCurrentView('plan_action_5s')}>
-          📋 Plan d'Action 5S
-        </button>
         <button className={`nav-item ${currentView === 'rapport' ? 'active' : ''}`} onClick={() => setCurrentView('rapport')}>
           📄 Rapport d'Audit
         </button>
 
         {/* SECTION GEMBA */}
         <div className="sidebar-section" style={{ marginTop: '1.5rem' }}>Gemba (5M)</div>
-        <button className={`nav-item ${currentView === 'import_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('import_gemba')}>
-          🏭 Importation Gemba
-        </button>
+        
+        {role === 'admin' && (
+          <>
+            <button className={`nav-item ${currentView === 'import_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('import_gemba')}>
+              🏭 Importation Gemba
+            </button>
+            <button className={`nav-item ${currentView === 'plan_action_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('plan_action_gemba')}>
+              📋 Plan d'Action Gemba
+            </button>
+          </>
+        )}
+
         <button className={`nav-item ${currentView === 'planifie_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('planifie_gemba')}>
           📊 Planifié vs Réalisé
         </button>
@@ -61,9 +77,6 @@ export default function Sidebar({ currentView, setCurrentView }) {
         </button>
         <button className={`nav-item ${currentView === 'analyse_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('analyse_gemba')}>
           🎯 Analyse & Priorités
-        </button>
-        <button className={`nav-item ${currentView === 'plan_action_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('plan_action_gemba')}>
-          📋 Plan d'Action Gemba
         </button>
         <button className={`nav-item ${currentView === 'rapport_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('rapport_gemba')}>
           📄 Rapport d'Audit Gemba

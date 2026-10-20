@@ -10,6 +10,7 @@ import ResultatsPiliers from './pages/ResultatsPiliers'
 import AnalysePriorites from './pages/AnalysePriorites'
 import RapportPdf from './pages/RapportPdf'
 import PlanAction5S from './pages/PlanAction5S'
+import Login from './pages/Login'
 
 import ImportGemba from './pages/ImportGemba'
 import GembaDashboard from './pages/GembaDashboard'
@@ -18,19 +19,50 @@ import GembaAnalyse from './pages/GembaAnalyse'
 import RapportGemba from './pages/RapportGemba'
 import PlanActionGemba from './pages/PlanActionGemba'
 
+import { supabase } from './supabaseClient'
 import { parseFile } from './services/importExcel'
 import { fetchAudits, upsertAudits } from './services/auditsApi'
 
 export default function App() {
-  const [audits, setAudits] = useState([])
+  const [session, setSession] = useState(null)
+  const [role, setRole] = useState('user')
   const [loading, setLoading] = useState(true)
+  const [audits, setAudits] = useState([])
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
   
   const [currentView, setCurrentView] = useState('import')
   const [previewMode, setPreviewMode] = useState(false)
 
+  // 1. Gérer la session
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      if (session) fetchUserRole(session.user.id)
+      else setLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session)
+      if (session) fetchUserRole(session.user.id)
+      else setRole('user')
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // 2. Récupérer le rôle de l'utilisateur
+  async function fetchUserRole(userId) {
+    const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single()
+    if (!error && data) {
+      setRole(data.role)
+    }
+    setLoading(false)
+  }
+
+  // 3. Charger les données
+  useEffect(() => {
+    if (!session) return
     async function load() {
       try {
         const data = await fetchAudits()
@@ -38,12 +70,10 @@ export default function App() {
         if (data.length === 0) setCurrentView('import')
       } catch (err) {
         setMessage({ type: 'error', text: err.message })
-      } finally {
-        setLoading(false)
       }
     }
     load()
-  }, [])
+  }, [session])
 
   async function handleFile(e) {
     const file = e.target.files?.[0]
@@ -77,11 +107,21 @@ export default function App() {
     }
   }
 
-  if (loading) return <div style={{ padding: 20, marginLeft: 260 }}>Chargement…</div>
+  if (loading) return <div style={{ padding: 20, textAlign: 'center', marginTop: '20vh' }}>Chargement…</div>
+  if (!session) return <Login />
 
   return (
     <div className="app-layout">
-      <Sidebar currentView={currentView} setCurrentView={setCurrentView} />
+      <div style={{ position: 'fixed', bottom: 15, left: 15, zIndex: 100 }}>
+        <button className="btn btn-danger" onClick={() => supabase.auth.signOut()} style={{ fontSize: '0.75rem', padding: '0.4rem 0.8rem' }}>
+          Déconnexion
+        </button>
+        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+          {session.user.email} <br/> ({role})
+        </div>
+      </div>
+
+      <Sidebar currentView={currentView} setCurrentView={setCurrentView} role={role} />
       
       <main className="main-content">
         {message.text && (
