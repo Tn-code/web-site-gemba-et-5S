@@ -12,7 +12,8 @@ import RapportPdf from './pages/RapportPdf'
 import PlanAction5S from './pages/PlanAction5S'
 import Pilotes5S from './pages/Pilotes5S'
 import MesActions from './pages/MesActions'
-import HistoriqueActions from './pages/HistoriqueActions' // NOUVEAU
+import HistoriqueActions from './pages/HistoriqueActions'
+import Heatmap5S from './pages/Heatmap5S' // NOUVEAU
 
 import ImportGemba from './pages/ImportGemba'
 import GembaDashboard from './pages/GembaDashboard'
@@ -21,6 +22,7 @@ import GembaAnalyse from './pages/GembaAnalyse'
 import RapportGemba from './pages/RapportGemba'
 import PlanActionGemba from './pages/PlanActionGemba'
 import PilotesGemba from './pages/PilotesGemba'
+import HeatmapGemba from './pages/HeatmapGemba' // NOUVEAU
 
 import Login from './pages/Login'
 import { supabase } from './supabaseClient'
@@ -139,6 +141,7 @@ export default function App() {
         {currentView === 'plan_action_gemba' && <PlanActionGemba />}
         {currentView === 'pilotes_gemba' && <PilotesGemba />}
         {currentView === 'rapport_gemba' && <RapportGemba />}
+        {currentView === 'heatmap_gemba' && <HeatmapGemba />} {/* NOUVEAU */}
 
         {/* 5S */}
         {currentView === 'plan_action_5s' && <PlanAction5S />}
@@ -152,6 +155,7 @@ export default function App() {
         {currentView === 'planifie' && !previewMode && <PlanifieRealise audits={audits} />}
         {currentView === 'uap' && !previewMode && <AnalysesUap audits={audits} />}
         {currentView === 'actions' && !previewMode && <PlanAction audits={audits} />}
+        {currentView === 'heatmap_5s' && <Heatmap5S />} {/* NOUVEAU */}
 
         {/* IMPORT 5S */}
         {currentView === 'import' && (

@@ -4,12 +4,12 @@ export default function Sidebar({ currentView, setCurrentView, role }) {
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
-        <span style={{ fontSize: '1.5rem' }}>🏭</span> WKW 5S & Gemba
+        <img src="/logo.png" alt="WKW Logo" style={{ height: '32px', objectFit: 'contain', marginRight: '0.5rem' }} />
+        <span>WKW Gemba</span>
       </div>
       
-      <div className="sidebar-nav" style={{ overflowY: 'auto', flex: 1, paddingRight: '0.5rem' }}>
+      <div className="sidebar-nav">
         
-        {/* MES ACTIONS */}
         <div className="sidebar-section">Mon Espace</div>
         <button className={`nav-item ${currentView === 'mes_actions' ? 'active' : ''}`} onClick={() => setCurrentView('mes_actions')}>
           📌 Mes Actions
@@ -46,6 +46,9 @@ export default function Sidebar({ currentView, setCurrentView, role }) {
         </button>
         <button className={`nav-item ${currentView === 'top3' ? 'active' : ''}`} onClick={() => setCurrentView('top3')}>
           🏆 Top & Bottom 3
+        </button>
+        <button className={`nav-item ${currentView === 'heatmap_5s' ? 'active' : ''}`} onClick={() => setCurrentView('heatmap_5s')}>
+          🔥 Heatmap 5S
         </button>
         <button className={`nav-item ${currentView === 'piliers' ? 'active' : ''}`} onClick={() => setCurrentView('piliers')}>
           🧭 Résultats par Axe
@@ -85,6 +88,9 @@ export default function Sidebar({ currentView, setCurrentView, role }) {
         </button>
         <button className={`nav-item ${currentView === 'top3_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('top3_gemba')}>
           🏆 Top & Bottom 3
+        </button>
+        <button className={`nav-item ${currentView === 'heatmap_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('heatmap_gemba')}>
+          🔥 Heatmap Gemba
         </button>
         <button className={`nav-item ${currentView === 'piliers_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('piliers_gemba')}>
           🧭 Résultats par M
