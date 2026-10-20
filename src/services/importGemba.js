@@ -6,54 +6,54 @@ const cleanText = (s) => {
   return String(s).replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim().toUpperCase()
 }
 
-// 🔴 FONCTION CRUCIALE : Lecture de date 100% infaillible
 function parseExcelDate(v) {
   if (v == null || v === '') return null
-  
-  // 1. Si c'est déjà une date (objet Date)
   if (v instanceof Date) {
-    return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`
+    return { iso: `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}` }
   }
-
-  // 2. Si c'est un nombre (numéro de série Excel)
   if (typeof v === 'number') {
     const date = new Date(Math.round((v - 25569) * 86400 * 1000))
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    return { iso: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}` }
   }
-
-  // 3. Si c'est une chaîne de caractères (ex: "14/10/2026" ou "2026-10-14")
   const str = String(v).trim()
-  
-  // Format JJ/MM/AAAA
   const matchSlash = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
   if (matchSlash) {
     const [_, day, month, year] = matchSlash
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    return { iso: `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}` }
   }
-
-  // Format AAAA-MM-JJ
   const matchDash = str.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
   if (matchDash) {
     const [_, year, month, day] = matchDash
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    return { iso: `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}` }
   }
-
-  // Si c'est un autre format de texte, on laisse JS essayer
   const d = new Date(str)
   if (!isNaN(d)) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    return { iso: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
   }
-
   return null
+}
+
+// Fonction pour extraire le vrai numéro de semaine
+function getWeekNum(dateStr) {
+  if (!dateStr) return null;
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const d = new Date(year, month - 1, day, 12, 0, 0);
+  const target = new Date(d.valueOf());
+  const dayNr = (d.getDay() + 6) % 7;
+  target.setDate(target.getDate() - dayNr + 3); 
+  const firstThursday = target.valueOf();
+  target.setMonth(0, 1);
+  if (target.getDay() !== 4) {
+    target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+  }
+  return 1 + Math.ceil((firstThursday - target) / 604800000);
 }
 
 export async function parseGembaFile(file) {
   const buf = await file.arrayBuffer()
-  
-  // On désactive la conversion automatique des dates pour gérer le format nous-mêmes
   const wb = XLSX.read(buf, { type: 'array', cellDates: false, raw: true })
   const ws = wb.Sheets[wb.SheetNames[0]]
-  if (!ws) throw new Error('Aucune feuille trouvée dans le fichier.')
+  if (!ws) throw new Error('Aucune feuille trouvée.')
 
   const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, blankrows: false })
   if (aoa.length < 2) throw new Error('Fichier vide.')
@@ -62,29 +62,20 @@ export async function parseGembaFile(file) {
   for (let i = 0; i < Math.min(aoa.length, 10); i++) {
     const row = (aoa[i] ?? []).map(norm)
     if (row.includes('Date') && row.includes('Point M')) {
-      headerIdx = i
-      break
+      headerIdx = i; break
     }
   }
-  if (headerIdx < 0) throw new Error('En-têtes Gemba introuvables (Date / Point M).')
+  if (headerIdx < 0) throw new Error('En-têtes introuvables.')
 
   const header = aoa[headerIdx].map(norm)
   const idx = (name) => header.indexOf(norm(name))
 
-  const iDate = idx('Date')
-  const iLigne = idx('Ligne')
-  const iUAP = idx('UAP')
-  const iAuditeur = idx('Auditeur')
-  const iPointM = idx('Point M')
-  const iQuestion = idx('Question')
-  const iReponse = idx('Réponse')
-  const iAction = idx('Action Corrective')
-  const iPilote = idx('Pilote')
-  const iDateAction = idx('Date Action')
-  const iScore = idx('Score (%)')
+  const iDate = idx('Date'), iLigne = idx('Ligne'), iUAP = idx('UAP'), iAuditeur = idx('Auditeur')
+  const iPointM = idx('Point M'), iQuestion = idx('Question'), iReponse = idx('Réponse')
+  const iAction = idx('Action Corrective'), iPilote = idx('Pilote'), iDateAction = idx('Date Action'), iScore = idx('Score (%)')
 
   const rows = []
-  let lastDate = null
+  let lastDateInfo = null
   let lastLigne = null
   let lastUAP = null
 
@@ -95,21 +86,22 @@ export async function parseGembaFile(file) {
 
     const question = norm(row[iQuestion])
     const pointM = norm(row[iPointM])
-    
-    // On garde la ligne si elle a une question OU un point M
     if (!question && !pointM) continue;
 
-    // Gestion des dates/lignes fusionnées (on garde la valeur précédente)
-    if (row[iDate]) lastDate = row[iDate]
+    if (row[iDate]) {
+      lastDateInfo = parseExcelDate(row[iDate])
+    }
     if (row[iLigne]) lastLigne = row[iLigne]
     if (row[iUAP]) lastUAP = row[iUAP]
 
-    // On utilise notre parseur de date infaillible
-    const dateStr = parseExcelDate(lastDate)
-    if (!dateStr) continue // Si pas de date valide, on ignore la ligne
+    if (!lastDateInfo) continue
+
+    const dateActionInfo = parseExcelDate(row[iDateAction])
+    const weekNum = getWeekNum(lastDateInfo.iso)
 
     rows.push({
-      date: dateStr,
+      date: lastDateInfo.iso,
+      semaine: weekNum, // ON SAUVEGARDE LA SEMAINE ICI
       ligne: cleanText(lastLigne) || '',
       uap: cleanText(lastUAP) || '',
       auditeur: cleanText(row[iAuditeur]) || '',
@@ -118,10 +110,9 @@ export async function parseGembaFile(file) {
       reponse: norm(row[iReponse]).toUpperCase(),
       action: norm(row[iAction]),
       pilote: cleanText(row[iPilote]),
-      date_action: parseExcelDate(row[iDateAction]),
+      date_action: dateActionInfo ? dateActionInfo.iso : null,
       score: Number(row[iScore]) || 0
     })
   }
-
   return rows
 }

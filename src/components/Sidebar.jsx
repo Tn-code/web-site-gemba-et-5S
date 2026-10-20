@@ -41,12 +41,9 @@ export default function Sidebar({ currentView, setCurrentView }) {
         <button className={`nav-item ${currentView === 'import_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('import_gemba')}>
           🏭 Importation Gemba
         </button>
-        
-        {/* NOUVEAU BOUTON */}
         <button className={`nav-item ${currentView === 'audits_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('audits_gemba')}>
           📋 Liste des Audits
         </button>
-        
         <button className={`nav-item ${currentView === 'planifie_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('planifie_gemba')}>
           📊 Planifié vs Réalisé
         </button>
@@ -61,12 +58,6 @@ export default function Sidebar({ currentView, setCurrentView }) {
         </button>
         <button className={`nav-item ${currentView === 'piliers_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('piliers_gemba')}>
           🧭 Résultats par M
-        </button>
-        <button className={`nav-item ${currentView === 'analyse_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('analyse_gemba')}>
-          🎯 Analyse & Priorités
-        </button>
-        <button className={`nav-item ${currentView === 'rapport_gemba' ? 'active' : ''}`} onClick={() => setCurrentView('rapport_gemba')}>
-          📄 Rapport d'Audit Gemba
         </button>
       </div>
     </aside>

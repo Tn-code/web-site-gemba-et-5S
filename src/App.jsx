@@ -9,9 +9,12 @@ import Top3Lignes from './pages/Top3Lignes'
 import ResultatsPiliers from './pages/ResultatsPiliers'
 import AnalysePriorites from './pages/AnalysePriorites'
 import RapportPdf from './pages/RapportPdf'
+
 import ImportGemba from './pages/ImportGemba'
-import GembaAudits from './pages/GembaAudits' // Nouvelle page
-import GembaAnalyses from './pages/GembaAnalyses'
+import GembaAudits from './pages/GembaAudits'
+import GembaDashboard from './pages/GembaDashboard'
+import GembaPlanifieRealise from './pages/GembaPlanifieRealise'
+
 import { parseFile } from './services/importExcel'
 import { fetchAudits, upsertAudits } from './services/auditsApi'
 
@@ -40,10 +43,7 @@ export default function App() {
     }
   }
 
-  // Le reste des fonctions d'import 5S...
-  async function handleFile(e) { /* ... */ }
-  async function handleSave() { /* ... */ }
-  function handleCancel() { /* ... */ }
+  // ... (les fonctions d'import 5S restent inchangées) ...
 
   if (loading) return <div className="container muted" style={{ marginLeft: 260 }}>Chargement…</div>
 
@@ -60,12 +60,25 @@ export default function App() {
 
         {/* SECTION GEMBA */}
         {currentView === 'import_gemba' && <ImportGemba />}
-        {currentView === 'audits_gemba' && <GembaAudits />} {/* Lien ajouté ici */}
-        {currentView.endsWith('_gemba') && currentView !== 'import_gemba' && currentView !== 'audits_gemba' && (
-          <GembaAnalyses view={currentView} />
+        {currentView === 'audits_gemba' && <GembaAudits />}
+        {currentView === 'planifie_gemba' && <GembaPlanifieRealise />}
+        
+        {['uap_gemba', 'lignes_gemba', 'top3_gemba', 'piliers_gemba'].includes(currentView) && (
+          <GembaDashboard view={currentView} />
         )}
 
-        {/* SECTION 5S (inchangé) */}
+        {/* SECTION 5S (Le reste reste inchangé) */}
+        {currentView === 'rapport' && !previewMode && <RapportPdf audits={audits} />}
+        {currentView === 'analyse' && !previewMode && <AnalysePriorites audits={audits} />}
+        {currentView === 'piliers' && !previewMode && <ResultatsPiliers audits={audits} />}
+        {currentView === 'top3' && !previewMode && <Top3Lignes audits={audits} />}
+        {currentView === 'tendance' && !previewMode && <TendanceLigne audits={audits} />}
+        {currentView === 'lignes' && !previewMode && <ResultatsLigne audits={audits} />}
+        {currentView === 'planifie' && !previewMode && <PlanifieRealise audits={audits} />}
+        {currentView === 'uap' && !previewMode && <AnalysesUap audits={audits} />}
+        {currentView === 'actions' && !previewMode && <PlanAction audits={audits} />}
+
+        {/* IMPORT 5S (Ton code actuel) */}
         {/* ... */}
       </main>
     </div>
